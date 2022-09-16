@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////
 // JSHint configuration                                                          //
 ///////////////////////////////////////////////////////////////////////////////////
 /* global engine                                                                 */
@@ -199,34 +199,36 @@ TraktorS2MK3.registerInputPackets = function () {
     this.controller.registerInputPacket(messageLong);
 
     // Soft takeover for all knobs
-    engine.softTakeover("[Channel1]", "rate", true);
-    engine.softTakeover("[Channel2]", "rate", true);
+    if (false) {
+        engine.softTakeover("[Channel1]", "rate", true);
+        engine.softTakeover("[Channel2]", "rate", true);
 
-    engine.softTakeover("[Channel1]", "volume", true);
-    engine.softTakeover("[Channel2]", "volume", true);
+        engine.softTakeover("[Channel1]", "volume", true);
+        engine.softTakeover("[Channel2]", "volume", true);
 
-    engine.softTakeover("[Channel1]", "pregain", true);
-    engine.softTakeover("[Channel2]", "pregain", true);
+        engine.softTakeover("[Channel1]", "pregain", true);
+        engine.softTakeover("[Channel2]", "pregain", true);
 
-    engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter3", true);
-    engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter2", true);
-    engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter1", true);
+        engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter3", true);
+        engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter2", true);
+        engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter1", true);
 
-    engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter3", true);
-    engine.softTakeover("[EqualizerRack1_[Channel2]_Effect1]", "parameter2", true);
-    engine.softTakeover("[EqualizerRack1_[Channel3]_Effect1]", "parameter1", true);
+        engine.softTakeover("[EqualizerRack1_[Channel1]_Effect1]", "parameter3", true);
+        engine.softTakeover("[EqualizerRack1_[Channel2]_Effect1]", "parameter2", true);
+        engine.softTakeover("[EqualizerRack1_[Channel3]_Effect1]", "parameter1", true);
 
-    engine.softTakeover("[QuickEffectRack1_[Channel1]]", "super1", true);
-    engine.softTakeover("[QuickEffectRack1_[Channel2]]", "super1", true);
+        engine.softTakeover("[QuickEffectRack1_[Channel1]]", "super1", true);
+        engine.softTakeover("[QuickEffectRack1_[Channel2]]", "super1", true);
 
-    engine.softTakeover("[Master]", "crossfader", true);
-    // see the above comment on master gain
-    //engine.softTakeover("[Master]", "gain", true);
-    engine.softTakeover("[Master]", "headMix", true);
-    engine.softTakeover("[Master]", "headGain", true);
+        engine.softTakeover("[Master]", "crossfader", true);
+        // see the above comment on master gain
+        //engine.softTakeover("[Master]", "gain", true);
+        engine.softTakeover("[Master]", "headMix", true);
+        engine.softTakeover("[Master]", "headGain", true);
 
-    for (var i = 1; i <= 16; ++i) {
-        engine.softTakeover("[Sampler" + i + "]", "pregain", true);
+        for (var i = 1; i <= 16; ++i) {
+            engine.softTakeover("[Sampler" + i + "]", "pregain", true);
+        }
     }
 
     // Dirty hack to set initial values in the packet parser
@@ -531,7 +533,7 @@ TraktorS2MK3.samplerPregainHandler = function (field) {
 TraktorS2MK3.jogTouchHandler = function (field) {
     var deckNumber = TraktorS2MK3.controller.resolveDeck(field.group);
     if (field.value > 0) {
-        engine.scratchEnable(deckNumber, 1024, 33 + 1 / 3, 0.125, 0.125 / 8, true);
+        engine.scratchEnable(deckNumber, 600, 1 * (33 + 1 / 3), 0.125, 0.125 / 8, true);
     } else {
         engine.scratchDisable(deckNumber);
     }
@@ -554,6 +556,17 @@ TraktorS2MK3.jogHandler = function (field) {
 TraktorS2MK3.wheelDeltas = function (deckNumber, value) {
     // When the wheel is touched, four bytes change, but only the first behaves predictably.
     // It looks like the wheel is 1024 ticks per revolution.
+
+    conv = function(x) {
+        r = ""
+        for (var i = 0; i < 8; i++) {
+            r += (x >> i) & 1;
+        }
+        return r + "=" + x;
+    }
+
+    print("xxx-bbytes: " + (value & 0xFF) + ", " + conv((value >>> 8) & 0xFF) + ", " + ((value >>> 16) & 0xFF) + ", " + ((value >>> 24) & 0xFF));
+
     var tickval = value & 0xFF;
     var timeval = value >>> 16;
     var prevTick = 0;
@@ -584,6 +597,10 @@ TraktorS2MK3.wheelDeltas = function (deckNumber, value) {
         tickDelta = tickval - prevTick;
     }
 
+
+    this.acc = this.acc ? this.acc + tickDelta : tickDelta;
+    print("xxx-timevalue: " + timeval + ", tickval: "+ tickval + ", tickdelta: " + tickDelta + ", acc: " + this.acc);
+0
     return [tickDelta, timeDelta];
 };
 
